@@ -7,15 +7,14 @@ class Colors {
   static const String homeCenter = 'green';
 }
 
-
 void main() {
   final DivElement mainDiv = querySelector('#areaMain');
   final CanvasElement canvas = querySelector('#gameCanvas');
-  
+
   canvas
     ..width = mainDiv.clientWidth
     ..height = mainDiv.clientHeight
-  ..focus();
+    ..focus();
 
   GameHost(canvas).start;
 }
@@ -23,28 +22,27 @@ void main() {
 class GameHost {
   CanvasElement canvas;
   int lastTimestamp = 0;
-  num renderTime;
+  num renderTime; 
   Keyboard keyboard;
   GameState currentState;
-  
 
   GameHost(this.canvas) {
-    keyboard = new Keyboard();
-    var renderer = new Renderer(canvas.context2D, canvas.width, canvas.height);
-    currentState = new StateLoad(keyboard, renderer);
+    keyboard = Keyboard();
+    var renderer = Renderer(canvas.context2D, canvas.width, canvas.height);
+    currentState = StateLoad(keyboard, renderer);
   }
 
-  start() {
+  void start() {
     requestRedraw();
   }
 
   void draw(num _) {
-    final num time = new DateTime.now().millisecondsSinceEpoch;
+    final num time = DateTime.now().millisecondsSinceEpoch;
     //if (renderTime != null)
     ///  showFps(_, 1000 / (time - renderTime));
     renderTime = time;
 
-    double elapsed = 0.0;
+    var elapsed = 0.0;
     if (lastTimestamp != 0) {
       elapsed = (time - lastTimestamp) / 1000.0;
     }
@@ -67,28 +65,20 @@ class GameHost {
   }
 }
 
-
-
 class StateLoad extends GameState {
-
-  double _loaded = 0.0;
+  final double _loaded = 0.0;
   bool _fullyLoaded = false;
-  double _readyTime = double.maxFinite; // .MAX_FINITE;
+  final double _readyTime = double.maxFinite; // .MAX_FINITE;
 
-  StateLoad(final Keyboard keyboard, final Renderer renderer) : super(keyboard, renderer) {
-    var clips =
-        [ 
-          
-        ];
-  
+  StateLoad(final Keyboard keyboard, final Renderer renderer)
+      : super(keyboard, renderer) {
+    var clips = [];
   }
 
-  
   GameState _update(double elapsed) {
     super._update(elapsed);
 
-    if (_fullyLoaded)
-      return new StateInit(_keyboard, _renderer);
+    if (_fullyLoaded) return  StateInit(_keyboard, _renderer);
 
     return this;
   }
@@ -97,21 +87,17 @@ class StateLoad extends GameState {
     _renderer.clip();
     _renderer.clearAll(Colors.backgroundMain);
 
-    final int loadedPercentage = (_loaded * 100.0).toInt();
-    final bool wasFullyLoaded = _fullyLoaded;
+    final loadedPercentage = (_loaded * 100.0).toInt();
+    final  wasFullyLoaded = _fullyLoaded;
     _fullyLoaded = loadedPercentage == 100;
   }
-   
 }
-
-
-
 
 class StateInit extends GameState {
   double _readyTime = 2.0;
 
-  StateInit(final Keyboard keyboard, final Renderer renderer) : super(keyboard, renderer) {
-  }
+  StateInit(final Keyboard keyboard, final Renderer renderer)
+      : super(keyboard, renderer) {}
 
   void _initialize() {
     // querySelector("#areaGameTextInstruction").style.visibility = "visible";
@@ -134,30 +120,11 @@ class StateInit extends GameState {
     // if (_totalElapsed < _readyTime)
     //   //querySelector("#areaGameTextMain").text = "LOST SOULS";
     // else print('dd');
-      //querySelector("#areaGameTextMain").text = "PRESS SPACE TO START";
+    //querySelector("#areaGameTextMain").text = "PRESS SPACE TO START";
 
     //querySelector("#areaGameTextMain").style.visibility = "visible";
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 class GameState {
   final Keyboard _keyboard;
@@ -167,20 +134,15 @@ class GameState {
 
   GameState(this._keyboard, this._renderer);
 
-  void _initialize() {
-  }
+  void _initialize() {}
 
   GameState _update(final double elapsed) {
     _totalElapsed = _totalElapsed + elapsed;
     return this;
   }
 
-  void _render() {
-  }
+  void _render() {}
 }
-
-
-
 
 class Renderer {
   final CanvasRenderingContext2D context;
@@ -207,10 +169,11 @@ class Renderer {
   }
 
   void fillRect(final String fill, int width, int height) {
-    context..beginPath()
-           ..fillStyle = fill
-           ..rect(0, 0, width, height)
-           ..fill();
+    context
+      ..beginPath()
+      ..fillStyle = fill
+      ..rect(0, 0, width, height)
+      ..fill();
   }
 
   void fillFullRect(final String fill) {
@@ -222,28 +185,21 @@ class Renderer {
   }
 
   void clear(int w, int h, String color) {
-    context..globalAlpha = 1
-           ..fillStyle = color
-           ..beginPath()
-           ..rect(0, 0, w, h)
-           ..fill();
+    context
+      ..globalAlpha = 1
+      ..fillStyle = color
+      ..beginPath()
+      ..rect(0, 0, w, h)
+      ..fill();
   }
-
-
 }
 
-
-
-
-
-
-
 class Keyboard {
-  final  _keys = <int>{};
+  final _keys = <int>{};
 
   Keyboard() {
     window.onKeyDown.listen((KeyboardEvent e) {
-        _keys.add(e.keyCode);
+      _keys.add(e.keyCode);
     });
 
     window.onKeyUp.listen((KeyboardEvent e) {
@@ -254,36 +210,19 @@ class Keyboard {
   isPressed(int keyCode) => _keys.contains(keyCode);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class StateGame extends GameState {
-  
   static bool _isMusicAllowed = true;
 
   final int _levelIndex;
   GameController _controller;
 
-  StateGame(final Keyboard keyboard, final Renderer renderer,  this._levelIndex) : super(keyboard, renderer, manager) {
+  StateGame(final Keyboard keyboard, final Renderer renderer, this._levelIndex)
+      : super(keyboard, renderer, manager) {
     _controller = createLevel(_levelIndex, 800, 600, renderer.context);
   }
 
   void _initialize() {
-    if (_isMusicAllowed)
-      _audioManager.play("music");
+    if (_isMusicAllowed) _audioManager.play("music");
 
     querySelector("#areaTime").style.visibility = "visible";
     querySelector("#areaScoreB").style.visibility = "visible";
@@ -307,7 +246,15 @@ class StateGame extends GameState {
 
     if (!_controller.entities.any((e) => e is LostSoul)) {
       _audioManager.play("levelwon");
-      return new StateFade(_keyboard, _renderer, _audioManager, this, new StateNewLevel(_keyboard, _renderer, _audioManager, _levelIndex + 1), 1.0, Colors.backgroundMain);
+      return new StateFade(
+          _keyboard,
+          _renderer,
+          _audioManager,
+          this,
+          new StateNewLevel(
+              _keyboard, _renderer, _audioManager, _levelIndex + 1),
+          1.0,
+          Colors.backgroundMain);
     }
     if (_controller._getTimeLeft() <= 0.0)
       return new StateGameOver(_keyboard, _renderer, _audioManager);
@@ -316,7 +263,6 @@ class StateGame extends GameState {
   }
 
   void _render() {
-    
     _controller.render(_totalElapsed);
 
     final double fadeOutStartTime = 10.0;
