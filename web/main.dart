@@ -16,7 +16,10 @@ void main() {
     ..height = 400 //mainDiv.clientHeight
     ..focus();
 
-  GameHost(canvas).start;
+  print('calling GameHost.start');
+  final game = GameHost(canvas);
+  game.start();
+  //GameHost(canvas).start;
 }
 
 class GameHost {
@@ -24,15 +27,17 @@ class GameHost {
   int lastTimestamp = 0;
   num timeStep; // It was the old name: renderTime;
   Keyboard keyboard;
-  //GameState currentState;
+  GameState currentState;
 
   GameHost(this.canvas) {
+    print('GameHost constructor');
     keyboard = Keyboard();
-    // var renderer = Renderer(canvas.context2D, canvas.width, canvas.height);
-    // currentState = StateLoad(keyboard, renderer);
+    var renderer = Renderer(canvas.context2D, canvas.width, canvas.height);
+    currentState = StateLoad(keyboard, renderer);
   }
 
   void start() {
+    print('Inside GameHost -> start');
     requestRedraw();
   }
 
@@ -48,14 +53,19 @@ class GameHost {
     }
 
     lastTimestamp = time;
-    // if (currentState != null) {
-    //   var nextState = currentState._update(elapsed);
-    //   currentState._render();
-    //   if (currentState != nextState) {
-    //     currentState = nextState;
-    //     currentState._initialize();
-    //   }
-    // }
+
+    print('Elapsed Time: ${elapsed}');
+
+    if (currentState != null) {
+      var nextState = currentState._update(elapsed);
+
+      currentState._render();
+
+      if (currentState != nextState) {
+        currentState = nextState;
+        currentState._initialize();
+      }
+    }
 
     requestRedraw();
   }
@@ -77,6 +87,8 @@ class Keyboard {
       _keys.remove(e.keyCode);
     });
   }
+
+  bool isPressed(int keyCode) => _keys.contains(keyCode);
 }
 
 class Renderer {
@@ -131,151 +143,148 @@ class Renderer {
   }
 }
 
-// class StateLoad extends GameState {
-//   final double _loaded = 0.0;
-//   bool _fullyLoaded = false;
-//   final double _readyTime = double.maxFinite; // .MAX_FINITE;
+class GameState {
+  final Keyboard _keyboard;
+  final Renderer _renderer;
+  //final AudioManager _audioManager;
+  double _totalElapsed = 0.0;
 
-//   StateLoad(final Keyboard keyboard, final Renderer renderer)
-//       : super(keyboard, renderer) {
-//     var clips = [];
-//   }
+  GameState(this._keyboard, this._renderer);
 
-//   GameState _update(double elapsed) {
-//     super._update(elapsed);
+  void _initialize() {}
 
-//     if (_fullyLoaded) return  StateInit(_keyboard, _renderer);
+  GameState _update(final double elapsed) {
+    _totalElapsed = _totalElapsed + elapsed;
+    return this;
+  }
 
-//     return this;
-//   }
+  void _render() {}
+}
 
-//   void _render() {
-//     _renderer.clip();
-//     _renderer.clearAll(Colors.backgroundMain);
+class StateLoad extends GameState {
+  final double _loaded = 0.0;
+  bool _fullyLoaded = false;
+  final double _readyTime = double.maxFinite; // .MAX_FINITE;
 
-//     final loadedPercentage = (_loaded * 100.0).toInt();
-//     final  wasFullyLoaded = _fullyLoaded;
-//     _fullyLoaded = loadedPercentage == 100;
-//   }
-// }
+  StateLoad(final Keyboard keyboard, final Renderer renderer)
+      : super(keyboard, renderer) {
+    var clips = [];
+  }
 
-// class StateInit extends GameState {
-//   double _readyTime = 2.0;
+  GameState _update(double elapsed) {
+    super._update(elapsed);
 
-//   StateInit(final Keyboard keyboard, final Renderer renderer)
-//       : super(keyboard, renderer) {}
+    if (_fullyLoaded) return StateInit(_keyboard, _renderer);
 
-//   void _initialize() {
-//     // querySelector("#areaGameTextInstruction").style.visibility = "visible";
-//     // querySelector("#areaScoreB").style.visibility = "hidden";
-//     // querySelector("#areaScoreT").style.visibility = "hidden";
-//   }
+    return this;
+  }
 
-//   GameState _update(double elapsed) {
-//     super._update(elapsed);
-//     if (_totalElapsed > _readyTime && _keyboard.isPressed(KeyCode.SPACE)) {
-//       querySelector("#areaGameTextInstruction").style.visibility = "hidden";
-//       return new StateGame(_keyboard, _renderer, 1);
-//     }
-//     return this;
-//   }
+  void _render() {
+    _renderer.clip();
+    _renderer.clearAll(Colors.backgroundMain);
 
-//   void _render() {
-//     _renderer.clip();
-//     _renderer.clearAll(Colors.backgroundMain);
-//     // if (_totalElapsed < _readyTime)
-//     //   //querySelector("#areaGameTextMain").text = "LOST SOULS";
-//     // else print('dd');
-//     //querySelector("#areaGameTextMain").text = "PRESS SPACE TO START";
+    final loadedPercentage = (_loaded * 100.0).toInt();
+    final wasFullyLoaded = _fullyLoaded;
+    _fullyLoaded = loadedPercentage == 100;
+  }
+}
 
-//     //querySelector("#areaGameTextMain").style.visibility = "visible";
-//   }
-// }
+class StateInit extends GameState {
+  double _readyTime = 2.0;
 
-// class GameState {
-//   final Keyboard _keyboard;
-//   final Renderer _renderer;
-//   //final AudioManager _audioManager;
-//   double _totalElapsed = 0.0;
+  StateInit(final Keyboard keyboard, final Renderer renderer)
+      : super(keyboard, renderer); // {}
 
-//   GameState(this._keyboard, this._renderer);
+  void _initialize() {
+    // querySelector("#areaGameTextInstruction").style.visibility = "visible";
+    // querySelector("#areaScoreB").style.visibility = "hidden";
+    // querySelector("#areaScoreT").style.visibility = "hidden";
+  }
 
-//   void _initialize() {}
+  GameState _update(double elapsed) {
+    super._update(elapsed);
+    if (_totalElapsed > _readyTime && _keyboard.isPressed(KeyCode.SPACE)) {
+      //querySelector("#areaGameTextInstruction").style.visibility = "hidden";
+      return StateGame(_keyboard, _renderer, 1);
+    }
+    return this;
+  }
 
-//   GameState _update(final double elapsed) {
-//     _totalElapsed = _totalElapsed + elapsed;
-//     return this;
-//   }
+  void _render() {
+    _renderer.clip();
+    _renderer.clearAll(Colors.backgroundMain);
+    // if (_totalElapsed < _readyTime)
+    //   //querySelector("#areaGameTextMain").text = "LOST SOULS";
+    // else print('dd');
+    //querySelector("#areaGameTextMain").text = "PRESS SPACE TO START";
 
-//   void _render() {}
-// }
+    //querySelector("#areaGameTextMain").style.visibility = "visible";
+  }
+}
 
-//   isPressed(int keyCode) => _keys.contains(keyCode);
-// }
+class StateGame extends GameState {
+  static bool _isMusicAllowed = true;
 
-// class StateGame extends GameState {
-//   static bool _isMusicAllowed = true;
+  final int _levelIndex;
+  //GameController _controller;
 
-//   final int _levelIndex;
-//   GameController _controller;
+  StateGame(final Keyboard keyboard, final Renderer renderer, this._levelIndex)
+      : super(keyboard, renderer) {
+    //_controller = createLevel(_levelIndex, 800, 600, renderer.context);
+  }
 
-//   StateGame(final Keyboard keyboard, final Renderer renderer, this._levelIndex)
-//       : super(keyboard, renderer, manager) {
-//     _controller = createLevel(_levelIndex, 800, 600, renderer.context);
-//   }
+  void _initialize() {
+    //if (_isMusicAllowed) _audioManager.play("music");
 
-//   void _initialize() {
-//     if (_isMusicAllowed) _audioManager.play("music");
+    // querySelector("#areaTime").style.visibility = "visible";
+    // querySelector("#areaScoreB").style.visibility = "visible";
+    // querySelector("#areaScoreT").style.visibility = "visible";
+  }
 
-//     querySelector("#areaTime").style.visibility = "visible";
-//     querySelector("#areaScoreB").style.visibility = "visible";
-//     querySelector("#areaScoreT").style.visibility = "visible";
-//   }
+  GameState _update(double elapsed) {
+    super._update(elapsed);
 
-//   GameState _update(double elapsed) {
-//     super._update(elapsed);
+    if (_keyboard.isPressed(KeyCode.M)) {
+      ///_audioManager.play("music");
+      //_isMusicAllowed = true;
+    }
 
-//     if (_keyboard.isPressed(KeyCode.M)) {
-//       _audioManager.play("music");
-//       _isMusicAllowed = true;
-//     }
+    if (_keyboard.isPressed(KeyCode.N)) {
+      //_audioManager.stop("music");
+      //_isMusicAllowed = false;
+    }
 
-//     if (_keyboard.isPressed(KeyCode.N)) {
-//       _audioManager.stop("music");
-//       _isMusicAllowed = false;
-//     }
+    //_controller.update(elapsed);
 
-//     _controller.update(elapsed);
+    // if (!_controller.entities.any((e) => e is LostSoul)) {
+    //   _audioManager.play("levelwon");
+    //   return new StateFade(
+    //       _keyboard,
+    //       _renderer,
+    //       _audioManager,
+    //       this,
+    //       new StateNewLevel(
+    //           _keyboard, _renderer, _audioManager, _levelIndex + 1),
+    //       1.0,
+    //       Colors.backgroundMain);
+    // }
+    // if (_controller._getTimeLeft() <= 0.0)
+    //   return new StateGameOver(_keyboard, _renderer, _audioManager);
 
-//     if (!_controller.entities.any((e) => e is LostSoul)) {
-//       _audioManager.play("levelwon");
-//       return new StateFade(
-//           _keyboard,
-//           _renderer,
-//           _audioManager,
-//           this,
-//           new StateNewLevel(
-//               _keyboard, _renderer, _audioManager, _levelIndex + 1),
-//           1.0,
-//           Colors.backgroundMain);
-//     }
-//     if (_controller._getTimeLeft() <= 0.0)
-//       return new StateGameOver(_keyboard, _renderer, _audioManager);
+    return this;
+  }
 
-//     return this;
-//   }
+  void _render() {
+    //_controller.render(_totalElapsed);
 
-//   void _render() {
-//     _controller.render(_totalElapsed);
+    // final double fadeOutStartTime = 10.0;
+    // final double timeLeft = _controller._getTimeLeft();
+    // if (timeLeft <= fadeOutStartTime) {
+    //   final double fraction = 1.0 - timeLeft / fadeOutStartTime;
 
-//     final double fadeOutStartTime = 10.0;
-//     final double timeLeft = _controller._getTimeLeft();
-//     if (timeLeft <= fadeOutStartTime) {
-//       final double fraction = 1.0 - timeLeft / fadeOutStartTime;
-
-//       _renderer.pushGlobalAlpha(fraction);
-//       _renderer.fillFullRect(Colors.backgroundGameOver);
-//       _renderer.popGlobalAlpha();
-//     }
-//   }
-// }
+    //   _renderer.pushGlobalAlpha(fraction);
+    //   _renderer.fillFullRect(Colors.backgroundGameOver);
+    //   _renderer.popGlobalAlpha();
+    // }
+  }
+}
