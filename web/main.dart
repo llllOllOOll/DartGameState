@@ -8,12 +8,12 @@ class Colors {
 }
 
 void main() {
-  final DivElement mainDiv = querySelector('#areaMain');
-  final CanvasElement canvas = querySelector('#gameCanvas');
+  final canvas = CanvasElement();
+  document.body.append(canvas);
 
   canvas
-    ..width = mainDiv.clientWidth
-    ..height = mainDiv.clientHeight
+    ..width = 400 //mainDiv.clientWidth
+    ..height = 400 //mainDiv.clientHeight
     ..focus();
 
   GameHost(canvas).start;
@@ -22,14 +22,14 @@ void main() {
 class GameHost {
   CanvasElement canvas;
   int lastTimestamp = 0;
-  num renderTime; 
+  num timeStep; // It was the old name: renderTime;
   Keyboard keyboard;
-  GameState currentState;
+  //GameState currentState;
 
   GameHost(this.canvas) {
     keyboard = Keyboard();
-    var renderer = Renderer(canvas.context2D, canvas.width, canvas.height);
-    currentState = StateLoad(keyboard, renderer);
+    // var renderer = Renderer(canvas.context2D, canvas.width, canvas.height);
+    // currentState = StateLoad(keyboard, renderer);
   }
 
   void start() {
@@ -40,7 +40,7 @@ class GameHost {
     final num time = DateTime.now().millisecondsSinceEpoch;
     //if (renderTime != null)
     ///  showFps(_, 1000 / (time - renderTime));
-    renderTime = time;
+    timeStep = time;
 
     var elapsed = 0.0;
     if (lastTimestamp != 0) {
@@ -48,14 +48,14 @@ class GameHost {
     }
 
     lastTimestamp = time;
-    if (currentState != null) {
-      var nextState = currentState._update(elapsed);
-      currentState._render();
-      if (currentState != nextState) {
-        currentState = nextState;
-        currentState._initialize();
-      }
-    }
+    // if (currentState != null) {
+    //   var nextState = currentState._update(elapsed);
+    //   currentState._render();
+    //   if (currentState != nextState) {
+    //     currentState = nextState;
+    //     currentState._initialize();
+    //   }
+    // }
 
     requestRedraw();
   }
@@ -65,89 +65,26 @@ class GameHost {
   }
 }
 
-class StateLoad extends GameState {
-  final double _loaded = 0.0;
-  bool _fullyLoaded = false;
-  final double _readyTime = double.maxFinite; // .MAX_FINITE;
+class Keyboard {
+  final _keys = <int>{};
 
-  StateLoad(final Keyboard keyboard, final Renderer renderer)
-      : super(keyboard, renderer) {
-    var clips = [];
+  Keyboard() {
+    window.onKeyDown.listen((KeyboardEvent e) {
+      _keys.add(e.keyCode);
+    });
+
+    window.onKeyUp.listen((KeyboardEvent e) {
+      _keys.remove(e.keyCode);
+    });
   }
-
-  GameState _update(double elapsed) {
-    super._update(elapsed);
-
-    if (_fullyLoaded) return  StateInit(_keyboard, _renderer);
-
-    return this;
-  }
-
-  void _render() {
-    _renderer.clip();
-    _renderer.clearAll(Colors.backgroundMain);
-
-    final loadedPercentage = (_loaded * 100.0).toInt();
-    final  wasFullyLoaded = _fullyLoaded;
-    _fullyLoaded = loadedPercentage == 100;
-  }
-}
-
-class StateInit extends GameState {
-  double _readyTime = 2.0;
-
-  StateInit(final Keyboard keyboard, final Renderer renderer)
-      : super(keyboard, renderer) {}
-
-  void _initialize() {
-    // querySelector("#areaGameTextInstruction").style.visibility = "visible";
-    // querySelector("#areaScoreB").style.visibility = "hidden";
-    // querySelector("#areaScoreT").style.visibility = "hidden";
-  }
-
-  GameState _update(double elapsed) {
-    super._update(elapsed);
-    if (_totalElapsed > _readyTime && _keyboard.isPressed(KeyCode.SPACE)) {
-      querySelector("#areaGameTextInstruction").style.visibility = "hidden";
-      return new StateGame(_keyboard, _renderer, 1);
-    }
-    return this;
-  }
-
-  void _render() {
-    _renderer.clip();
-    _renderer.clearAll(Colors.backgroundMain);
-    // if (_totalElapsed < _readyTime)
-    //   //querySelector("#areaGameTextMain").text = "LOST SOULS";
-    // else print('dd');
-    //querySelector("#areaGameTextMain").text = "PRESS SPACE TO START";
-
-    //querySelector("#areaGameTextMain").style.visibility = "visible";
-  }
-}
-
-class GameState {
-  final Keyboard _keyboard;
-  final Renderer _renderer;
-  //final AudioManager _audioManager;
-  double _totalElapsed = 0.0;
-
-  GameState(this._keyboard, this._renderer);
-
-  void _initialize() {}
-
-  GameState _update(final double elapsed) {
-    _totalElapsed = _totalElapsed + elapsed;
-    return this;
-  }
-
-  void _render() {}
 }
 
 class Renderer {
   final CanvasRenderingContext2D context;
+
   final int _width;
   final int _height;
+
   double _previousGlobalAlpha = 1.0;
 
   Renderer(this.context, this._width, this._height);
@@ -194,85 +131,151 @@ class Renderer {
   }
 }
 
-class Keyboard {
-  final _keys = <int>{};
+// class StateLoad extends GameState {
+//   final double _loaded = 0.0;
+//   bool _fullyLoaded = false;
+//   final double _readyTime = double.maxFinite; // .MAX_FINITE;
 
-  Keyboard() {
-    window.onKeyDown.listen((KeyboardEvent e) {
-      _keys.add(e.keyCode);
-    });
+//   StateLoad(final Keyboard keyboard, final Renderer renderer)
+//       : super(keyboard, renderer) {
+//     var clips = [];
+//   }
 
-    window.onKeyUp.listen((KeyboardEvent e) {
-      _keys.remove(e.keyCode);
-    });
-  }
+//   GameState _update(double elapsed) {
+//     super._update(elapsed);
 
-  isPressed(int keyCode) => _keys.contains(keyCode);
-}
+//     if (_fullyLoaded) return  StateInit(_keyboard, _renderer);
 
-class StateGame extends GameState {
-  static bool _isMusicAllowed = true;
+//     return this;
+//   }
 
-  final int _levelIndex;
-  GameController _controller;
+//   void _render() {
+//     _renderer.clip();
+//     _renderer.clearAll(Colors.backgroundMain);
 
-  StateGame(final Keyboard keyboard, final Renderer renderer, this._levelIndex)
-      : super(keyboard, renderer, manager) {
-    _controller = createLevel(_levelIndex, 800, 600, renderer.context);
-  }
+//     final loadedPercentage = (_loaded * 100.0).toInt();
+//     final  wasFullyLoaded = _fullyLoaded;
+//     _fullyLoaded = loadedPercentage == 100;
+//   }
+// }
 
-  void _initialize() {
-    if (_isMusicAllowed) _audioManager.play("music");
+// class StateInit extends GameState {
+//   double _readyTime = 2.0;
 
-    querySelector("#areaTime").style.visibility = "visible";
-    querySelector("#areaScoreB").style.visibility = "visible";
-    querySelector("#areaScoreT").style.visibility = "visible";
-  }
+//   StateInit(final Keyboard keyboard, final Renderer renderer)
+//       : super(keyboard, renderer) {}
 
-  GameState _update(double elapsed) {
-    super._update(elapsed);
+//   void _initialize() {
+//     // querySelector("#areaGameTextInstruction").style.visibility = "visible";
+//     // querySelector("#areaScoreB").style.visibility = "hidden";
+//     // querySelector("#areaScoreT").style.visibility = "hidden";
+//   }
 
-    if (_keyboard.isPressed(KeyCode.M)) {
-      _audioManager.play("music");
-      _isMusicAllowed = true;
-    }
+//   GameState _update(double elapsed) {
+//     super._update(elapsed);
+//     if (_totalElapsed > _readyTime && _keyboard.isPressed(KeyCode.SPACE)) {
+//       querySelector("#areaGameTextInstruction").style.visibility = "hidden";
+//       return new StateGame(_keyboard, _renderer, 1);
+//     }
+//     return this;
+//   }
 
-    if (_keyboard.isPressed(KeyCode.N)) {
-      _audioManager.stop("music");
-      _isMusicAllowed = false;
-    }
+//   void _render() {
+//     _renderer.clip();
+//     _renderer.clearAll(Colors.backgroundMain);
+//     // if (_totalElapsed < _readyTime)
+//     //   //querySelector("#areaGameTextMain").text = "LOST SOULS";
+//     // else print('dd');
+//     //querySelector("#areaGameTextMain").text = "PRESS SPACE TO START";
 
-    _controller.update(elapsed);
+//     //querySelector("#areaGameTextMain").style.visibility = "visible";
+//   }
+// }
 
-    if (!_controller.entities.any((e) => e is LostSoul)) {
-      _audioManager.play("levelwon");
-      return new StateFade(
-          _keyboard,
-          _renderer,
-          _audioManager,
-          this,
-          new StateNewLevel(
-              _keyboard, _renderer, _audioManager, _levelIndex + 1),
-          1.0,
-          Colors.backgroundMain);
-    }
-    if (_controller._getTimeLeft() <= 0.0)
-      return new StateGameOver(_keyboard, _renderer, _audioManager);
+// class GameState {
+//   final Keyboard _keyboard;
+//   final Renderer _renderer;
+//   //final AudioManager _audioManager;
+//   double _totalElapsed = 0.0;
 
-    return this;
-  }
+//   GameState(this._keyboard, this._renderer);
 
-  void _render() {
-    _controller.render(_totalElapsed);
+//   void _initialize() {}
 
-    final double fadeOutStartTime = 10.0;
-    final double timeLeft = _controller._getTimeLeft();
-    if (timeLeft <= fadeOutStartTime) {
-      final double fraction = 1.0 - timeLeft / fadeOutStartTime;
+//   GameState _update(final double elapsed) {
+//     _totalElapsed = _totalElapsed + elapsed;
+//     return this;
+//   }
 
-      _renderer.pushGlobalAlpha(fraction);
-      _renderer.fillFullRect(Colors.backgroundGameOver);
-      _renderer.popGlobalAlpha();
-    }
-  }
-}
+//   void _render() {}
+// }
+
+//   isPressed(int keyCode) => _keys.contains(keyCode);
+// }
+
+// class StateGame extends GameState {
+//   static bool _isMusicAllowed = true;
+
+//   final int _levelIndex;
+//   GameController _controller;
+
+//   StateGame(final Keyboard keyboard, final Renderer renderer, this._levelIndex)
+//       : super(keyboard, renderer, manager) {
+//     _controller = createLevel(_levelIndex, 800, 600, renderer.context);
+//   }
+
+//   void _initialize() {
+//     if (_isMusicAllowed) _audioManager.play("music");
+
+//     querySelector("#areaTime").style.visibility = "visible";
+//     querySelector("#areaScoreB").style.visibility = "visible";
+//     querySelector("#areaScoreT").style.visibility = "visible";
+//   }
+
+//   GameState _update(double elapsed) {
+//     super._update(elapsed);
+
+//     if (_keyboard.isPressed(KeyCode.M)) {
+//       _audioManager.play("music");
+//       _isMusicAllowed = true;
+//     }
+
+//     if (_keyboard.isPressed(KeyCode.N)) {
+//       _audioManager.stop("music");
+//       _isMusicAllowed = false;
+//     }
+
+//     _controller.update(elapsed);
+
+//     if (!_controller.entities.any((e) => e is LostSoul)) {
+//       _audioManager.play("levelwon");
+//       return new StateFade(
+//           _keyboard,
+//           _renderer,
+//           _audioManager,
+//           this,
+//           new StateNewLevel(
+//               _keyboard, _renderer, _audioManager, _levelIndex + 1),
+//           1.0,
+//           Colors.backgroundMain);
+//     }
+//     if (_controller._getTimeLeft() <= 0.0)
+//       return new StateGameOver(_keyboard, _renderer, _audioManager);
+
+//     return this;
+//   }
+
+//   void _render() {
+//     _controller.render(_totalElapsed);
+
+//     final double fadeOutStartTime = 10.0;
+//     final double timeLeft = _controller._getTimeLeft();
+//     if (timeLeft <= fadeOutStartTime) {
+//       final double fraction = 1.0 - timeLeft / fadeOutStartTime;
+
+//       _renderer.pushGlobalAlpha(fraction);
+//       _renderer.fillFullRect(Colors.backgroundGameOver);
+//       _renderer.popGlobalAlpha();
+//     }
+//   }
+// }
