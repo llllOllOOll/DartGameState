@@ -5,12 +5,13 @@ var canvas = document.querySelector('canvas') as CanvasElement;
 var context2D = canvas.context2D;
 
 var rectRedPositionX = 10.0;
-var velocity = 0.08;
+var velocity = 0.80;
 var limit = 300;
 
-var timeStep = 1000 / 60;
 var lastTimeStamp = 0.0;
 var deltaTime = 0.0;
+var timeStep = 1000 / 60;
+//var numUpdateSteps = 0;
 var maxFPS = 60;
 
 var fpsDisplay = document.getElementById('fpsDisplay');
@@ -32,12 +33,19 @@ void loop(num timestamp) {
     run();
     return;
   }
-  var delta = timestamp - lastTimeStamp;
+  deltaTime = timestamp - lastTimeStamp;
   lastTimeStamp = timestamp;
 
-  while (delta >= timeStep) {
+  var numUpdateSteps = 0;
+
+  while (deltaTime >= timeStep) {
     update(timeStep);
-    delta -= timeStep;
+    deltaTime -= timeStep;
+
+    if (++numUpdateSteps >= 240) {
+      panic();
+      break;
+    }
   }
 
   draw();
@@ -55,6 +63,10 @@ void draw() {
 
   context2D.fillStyle = 'purple';
   context2D.fillRect(rectRedPositionX, 0, 32, 32);
+}
+
+void panic() {
+  deltaTime = 0.0;
 }
 
 class Keyboard {
