@@ -1,13 +1,14 @@
 import 'dart:html';
-import 'dart:math' as math;
 
 //var canvas = CanvasElement();
 var canvas = document.querySelector('canvas') as CanvasElement;
 var context2D = canvas.context2D;
 
 var rectRedPositionX = 10.0;
+var rectRedLastPositionX = 10.0;
 var velocity = 0.80;
 var limit = 300;
+var color = 'purple';
 
 var lastTimeStamp = 0.0;
 var deltaTime = 0.0;
@@ -59,27 +60,41 @@ void loop(num timestamp) {
     }
   }
 
-  draw();
+  draw(deltaTime / timeStep);
+  end(fps);
   run();
 }
 
 void update(elapsedtime) {
+  rectRedLastPositionX = rectRedPositionX;
   rectRedPositionX += velocity * elapsedtime;
 
   if (rectRedPositionX >= limit || rectRedPositionX <= 0) velocity = -velocity;
 }
 
-void draw() {
+void draw(interp) {
   context2D.clearRect(0, 0, 350, 200);
 
-  context2D.fillStyle = 'purple';
-  context2D.fillRect(rectRedPositionX, 0, 32, 32);
+  context2D.fillStyle = color;
+  context2D.fillRect(
+      rectRedLastPositionX + (rectRedPositionX - rectRedLastPositionX) * interp,
+      0,
+      32,
+      32);
 
   fpsDisplay.text = '${fps.round()} FPS';
 }
 
 void panic() {
   deltaTime = 0.0;
+}
+
+void end(fps) {
+  if (fps < 40) {
+    color = 'black';
+  } else if (fps > 50) {
+    color = 'purple';
+  }
 }
 
 class Keyboard {
