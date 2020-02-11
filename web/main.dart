@@ -1,4 +1,5 @@
 import 'dart:html';
+import 'dart:math' as math;
 
 //var canvas = CanvasElement();
 var canvas = document.querySelector('canvas') as CanvasElement;
@@ -11,8 +12,11 @@ var limit = 300;
 var lastTimeStamp = 0.0;
 var deltaTime = 0.0;
 var timeStep = 1000 / 60;
-//var numUpdateSteps = 0;
 var maxFPS = 60;
+
+double fps = 60;
+var frameThisSecond = 0.0;
+var lastFPSUpdate = 0.0;
 
 var fpsDisplay = document.getElementById('fpsDisplay');
 
@@ -35,6 +39,13 @@ void loop(num timestamp) {
   }
   deltaTime = timestamp - lastTimeStamp;
   lastTimeStamp = timestamp;
+
+  if (timestamp > lastFPSUpdate + 1000) {
+    fps = 0.25 * frameThisSecond + 0.75 * fps;
+    lastFPSUpdate = timestamp;
+    frameThisSecond = 0.0;
+  }
+  frameThisSecond++;
 
   var numUpdateSteps = 0;
 
@@ -63,6 +74,8 @@ void draw() {
 
   context2D.fillStyle = 'purple';
   context2D.fillRect(rectRedPositionX, 0, 32, 32);
+
+  fpsDisplay.text = '${fps.round()} FPS';
 }
 
 void panic() {
