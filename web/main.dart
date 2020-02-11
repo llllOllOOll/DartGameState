@@ -15,6 +15,10 @@ var deltaTime = 0.0;
 var timeStep = 1000 / 60;
 var maxFPS = 60;
 
+var running = false;
+var started = false;
+var frameID = 0;
+
 double fps = 60;
 var frameThisSecond = 0.0;
 var lastFPSUpdate = 0.0;
@@ -97,6 +101,26 @@ void end(fps) {
   }
 }
 
+void stop() {
+  running = false;
+  started = false;
+  window.cancelAnimationFrame(frameID);
+}
+
+void start() {
+  if (!started) {
+    started = true;
+
+    frameID = window.requestAnimationFrame((timestamp) {
+      draw(1);
+      running = true;
+      lastTimeStamp = timestamp;
+      frameThisSecond = 0.0;
+      frameID = window.requestAnimationFrame(loop);
+    });
+  }
+}
+
 class Keyboard {
   final _key = <int, num>{};
 
@@ -115,5 +139,5 @@ class Keyboard {
 
 void main() {
   setupCanvas();
-  run();
+  start();
 }
